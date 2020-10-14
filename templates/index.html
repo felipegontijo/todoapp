@@ -6,9 +6,9 @@
     <title>Todo App</title>
 </head>
 <body>
-    <ul id="list">
-        {% for item in list %}
-            <li id="item">{{ item.description }}</li>
+    <ul id="todos">
+        {% for todo in todos %}
+            <li id="todo">{{ todo.description }}</li>
         {% endfor %}
     </ul>
 </body>
