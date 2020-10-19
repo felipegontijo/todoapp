@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
@@ -26,7 +26,7 @@ def create_todo():
     new_todo = Todo(description=description)
     db.session.add(new_todo)
     db.session.commit()
-    return render_template('index.html', todos = Todo.query.all())
+    return redirect(url_for('index'))
     
 
 if __name__ == '__main__':
