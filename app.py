@@ -1,10 +1,13 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify, abort
 from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgres://felipegontijo@localhost:5432/todoapp'
+
 db = SQLAlchemy(app)
+migrate = Migrate(app, db)
 
 class Todo(db.Model):
     __tablename__ = 'todos'
@@ -14,7 +17,7 @@ class Todo(db.Model):
     def __repr__(self):
         return f'<Todo ID: {self.id} {self.description}>'
 
-db.create_all()
+# db.create_all() --> no need since now we're using Flask-Migrate
 
 @app.route('/')
 def index():
@@ -41,7 +44,6 @@ def create_todo():
         abort(500)
     else:
         return jsonify(body)
-    
 
 if __name__ == '__main__':
     app.run()
