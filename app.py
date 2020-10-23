@@ -35,6 +35,8 @@ def create_todo():
         db.session.commit()
         # access new_todo.description before the session is closed
         body['description'] = new_todo.description
+        body['id'] = new_todo.id
+        body['completed'] = new_todo.completed
     except:
         error = True
         db.session.rollback()
@@ -65,6 +67,24 @@ def check_todo(todo_id): # pass in the todos id
     else:
         return redirect(url_for('index')) # redirect user to refreshed homepage if no error
 
+@app.route('/todos/<todo_id>/delete', methods=['DELETE'])
+def delete_todo(todo_id):
+    error = False
+    try:
+        todo = Todo.query.get(todo_id)
+        db.session.delete(todo)
+        # instead of the two steps above, we could do: Todo.query.filter_by(id=todo_id).delete()
+        db.session.commit()
+    except:
+        error = True
+        db.session.rollback()
+        print(sys.exc_info())
+    finally:
+        db.session.close()
+    if error:
+        abort(500)
+    else:
+        return jsonify({ 'success': True })
 
 if __name__ == '__main__':
     app.run()
