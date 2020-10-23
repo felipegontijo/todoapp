@@ -22,7 +22,7 @@ class Todo(db.Model):
 
 @app.route('/')
 def index():
-    return render_template('index.html', todos = Todo.query.all())
+    return render_template('index.html', todos = Todo.query.order_by('id').all())
 
 @app.route('/todos/create', methods=['POST'])
 def create_todo():
@@ -45,6 +45,26 @@ def create_todo():
         abort(500)
     else:
         return jsonify(body)
+
+@app.route('/todos/<todo_id>/check', methods=['POST']) # route to handle changes of state in todos
+def check_todo(todo_id): # pass in the todos id
+    error = False
+    try:
+        is_checked = request.get_json()['is_checked'] # get the checked info from the client side request -- true or false
+        todo = Todo.query.get(todo_id) # grab that todo in our database
+        todo.completed = is_checked # set the todos completed property in database to the info received from client
+        db.session.commit() # commit changes to db
+    except:
+        error = True
+        db.session.rollback() # rollback in case of any errors
+        print(sys.exc_info())
+    finally:
+        db.session.close() # always close the connection
+    if error:
+        abort(500) # show server error status message in case of error
+    else:
+        return redirect(url_for('index')) # redirect user to refreshed homepage if no error
+
 
 if __name__ == '__main__':
     app.run()
