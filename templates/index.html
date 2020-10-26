@@ -29,6 +29,8 @@
         .lists-wrapper, .todos-wrapper {
             display: inline-block;
             vertical-align: top;
+            margin-block-start: 1em;
+            margin-inline-start: 2em;
         }
     </style>
 </head>
@@ -45,6 +47,7 @@
                     <a href="/lists/{{ list.id }}">
                         {{ list.name }}
                     </a>
+                    <button data-id="{{ list.id }}" class="delete-list">&cross;</button>
                 </li>
             {% endfor %}
         </ul>
@@ -57,13 +60,17 @@
         </form>
         <div id="error" class="hidden">Something went wrong.</div>
         <ul id="todos">
-            {% for todo in todos %}
-                <li id="todo">
-                    <input class="todo-checkbox" data-id="{{ todo.id }}" type="checkbox" {% if todo.completed %} checked {% endif %}/>
-                    {{ todo.description }}
-                    <button class="delete-button">&cross;</button>
-                </li>
-            {% endfor %}
+            {% if todos %}
+                {% for todo in todos %}
+                    <li id="todo">
+                        <input class="todo-checkbox" data-id="{{ todo.id }}" type="checkbox" {% if todo.completed %} checked {% endif %}/>
+                        {{ todo.description }}
+                        <button class="delete-todo">&cross;</button>
+                    </li>
+                {% endfor %}
+            {% else %}
+                <h5>This to-do list is empty. Please select another one.</h5>
+            {% endif %}
         </ul>
     </div>
     <script>
@@ -123,7 +130,21 @@
                 lists.appendChild(new_list)
             })
         }
-        const buttons = document.querySelectorAll('.delete-button')
+        const deleteButtons = document.querySelectorAll('.delete-list')
+        for (const deleteButton of deleteButtons) {
+            deleteButton.onclick = (e) => {
+                const listId = e.target.dataset.id
+                fetch(`/lists/${listId}/delete`, {
+                    method: 'DELETE'
+                })
+                .then( () => {
+                    const item = e.target.parentElement
+                    item.remove()
+                })
+            }
+        }
+
+        const buttons = document.querySelectorAll('.delete-todo')
         for (const button of buttons) {
             button.onclick = (e) => {
                 const todoId = e.target.previousElementSibling.dataset.id

@@ -25,7 +25,7 @@ class List(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(), nullable=False)
     completed = db.Column(db.Boolean, nullable=True, default=False)
-    todos = db.relationship('Todo', backref='list', lazy=True, cascade='all, delete-orphan')
+    todos = db.relationship('Todo', backref='list', cascade='all, delete-orphan', lazy=True)
 
     def __repr__(self):
         return f'<List ID: {self.id}, name: {self.name}, todos: {self.todos}'
@@ -152,6 +152,24 @@ def check_list(list_id):
         abort(500)
     else:
         return jsonify(body)
+
+@app.route('/lists/<list_id>/delete', methods=['DELETE'])
+def delete_list(list_id):
+    error = False
+    try:
+        list_to_delete = List.query.get(list_id)
+        db.session.delete(list_to_delete)
+        db.session.commit()
+    except:
+        error = True
+        db.session.rollback()
+        print(sys.exc_info())
+    finally:
+        db.session.close()
+    if error:
+        abort(500)
+    else:
+        return jsonify({ 'success': True })
 
 if __name__ == '__main__':
     app.run()
