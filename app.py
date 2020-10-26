@@ -24,7 +24,8 @@ class List(db.Model):
     __tablename__ = 'lists'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(), nullable=False)
-    todos = db.relationship('Todo', backref='list', lazy=True)
+    completed = db.Column(db.Boolean, nullable=True, default=False)
+    todos = db.relationship('Todo', backref='list', lazy=True, cascade='all, delete-orphan')
 
     def __repr__(self):
         return f'<List ID: {self.id}, name: {self.name}, todos: {self.todos}'
@@ -101,7 +102,7 @@ def delete_todo(todo_id):
 
 @app.route('/lists/<list_id>')
 def get_list(list_id):
-    lists = List.query.all()
+    lists = List.query.order_by('id').all()
     todos = Todo.query.filter_by(list_id=list_id).order_by('id').all()
     active_list = List.query.get(list_id)
     
@@ -118,6 +119,29 @@ def create_list():
         db.session.commit()
         body['name'] = new_list.name
         body['id'] = new_list.id
+    except:
+        error = True
+        db.session.rollback()
+        print(sys.exc_info())
+    finally:
+        db.session.close()
+    if error:
+        abort(500)
+    else:
+        return jsonify(body)
+
+@app.route('/lists/<list_id>/check', methods=['POST'])
+def check_list(list_id):
+    error = False
+    body = []
+    try:
+        is_list_checked = request.get_json()['is_list_checked']
+        list_to_change = List.query.get(list_id)
+        list_to_change.completed = is_list_checked
+        for todo in Todo.query.filter_by(list_id=list_id).order_by('id').all():
+            todo.completed = is_list_checked
+            body.append(todo.id)
+        db.session.commit()
     except:
         error = True
         db.session.rollback()

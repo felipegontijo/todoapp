@@ -40,9 +40,12 @@
         </form>
         <ul id="lists">
             {% for list in lists %}
-                <li data-id="{{ list.id }}"><a href="/lists/{{ list.id }}">
-                    {{ list.name }}
-                </a></li>
+                <li data-id="{{ list.id }}">
+                    <input class="list-checkbox" data-id="{{ list.id }}" type="checkbox" {% if list.completed %} checked {% endif %}/>
+                    <a href="/lists/{{ list.id }}">
+                        {{ list.name }}
+                    </a>
+                </li>
             {% endfor %}
         </ul>
     </div>
@@ -56,7 +59,7 @@
         <ul id="todos">
             {% for todo in todos %}
                 <li id="todo">
-                    <input class="checkbox" data-id="{{ todo.id }}" type="checkbox" {% if todo.completed %} checked {% endif %}/>
+                    <input class="todo-checkbox" data-id="{{ todo.id }}" type="checkbox" {% if todo.completed %} checked {% endif %}/>
                     {{ todo.description }}
                     <button class="delete-button">&cross;</button>
                 </li>
@@ -64,6 +67,37 @@
         </ul>
     </div>
     <script>
+        const listCheckboxes = document.querySelectorAll('.list-checkbox')
+        for (const listCheckbox of listCheckboxes) {
+            listCheckbox.onchange = (e) => {
+                console.log('event', e)
+                // grab new value for checked
+                const isListChecked = e.target.checked
+                const list_id = e.target.dataset['id']
+                // send new value to backend to update db
+                fetch(`/lists/${list_id}/check`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        'is_list_checked': isListChecked
+                    })
+                })
+                // refresh frontend
+                .then(response => response.json())
+                .then(jsonResponse => {
+                    const todoCheckboxes = document.querySelectorAll('.todo-checkbox')
+                    for (const todoCheckbox of todoCheckboxes) {
+                        jsonResponse.forEach(todoId => {
+                            if (todoId == todoCheckbox.dataset.id) {
+                                todoCheckbox.checked = isListChecked
+                            }
+                        });
+                    }
+                })
+            }
+        }
         document.getElementById('create-list').onsubmit = (e) => {
             e.preventDefault()
             fetch('/lists/create', {
@@ -102,7 +136,7 @@
                 })
             }
         }
-        const checkboxes = document.querySelectorAll('.checkbox') // grab all todos
+        const checkboxes = document.querySelectorAll('.todo-checkbox') // grab all todos
         for (const checkbox of checkboxes) { // iterate through them, doing the below for each todo
             checkbox.onchange = (e) => { // if checkbox state changes...
                 console.log('event', e)
@@ -145,7 +179,7 @@
                 const li = document.createElement('LI')
                 
                 const checkbox = document.createElement('input')
-                checkbox.className = 'checkbox'
+                checkbox.className = 'todo-checkbox'
                 checkbox.type = 'checkbox'
                 checkbox.setAttribute('data-id', jsonResponse.id)
                 li.appendChild(checkbox)
