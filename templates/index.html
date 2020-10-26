@@ -119,14 +119,27 @@
             .then(response => response.json())
             .then(jsonResponse => {
                 const lists = document.getElementById('lists')
+                
                 const new_list = document.createElement('LI')
                 new_list.dataset.id = jsonResponse.id
+
+                const checkbox = document.createElement('input')
+                checkbox.className = 'list-checkbox'
+                checkbox.type = 'checkbox'
+                checkbox.dataset.id = jsonResponse.id
+                new_list.appendChild(checkbox)
 
                 const link = document.createElement('A')
                 link.href = `/lists/${jsonResponse.id}`
                 link.innerHTML = jsonResponse.name
-
                 new_list.appendChild(link)
+
+                const deleteButton = document.createElement('button')
+                deleteButton.innerHTML = '&cross;'
+                deleteButton.classList.add('delete-list')
+                deleteButton.dataset.id = jsonResponse.id
+                new_list.appendChild(deleteButton)
+
                 lists.appendChild(new_list)
             })
         }
