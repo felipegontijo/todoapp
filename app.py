@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify, abort
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
+import sys
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -17,7 +18,7 @@ class Todo(db.Model):
     todolist_id = db.Column(db.Integer, db.ForeignKey('todolists.id'), nullable=False)
 
     def __repr__(self):
-        return f'<Todo ID: {self.id} {self.description}>'
+        return f'<Todo ID: {self.id}, description: {self.description}, completed: {self.completed}>'
 
 class TodoList(db.Model):
     __tablename__ = 'todolists'
@@ -25,12 +26,14 @@ class TodoList(db.Model):
     name = db.Column(db.String(), nullable=False)
     todos = db.relationship('Todo', backref='list', lazy=True)
 
+    def __repr__(self):
+        return f'<TodoList ID: {self.id}, name: {self.name}, todos: {self.todos}'
 
 # db.create_all() --> no need since now we're using Flask-Migrate
 
 @app.route('/')
 def index():
-    return render_template('index.html', todos = Todo.query.order_by('id').all())
+    return redirect(url_for('get_todolist', todolist_id=1))
 
 @app.route('/todos/create', methods=['POST'])
 def create_todo():
@@ -38,13 +41,15 @@ def create_todo():
     body = {}
     try:    
         description = request.get_json()['description']
-        new_todo = Todo(description=description)
+        list_id = request.get_json()['list_id']
+        new_todo = Todo(description=description, todolist_id=list_id)
         db.session.add(new_todo)
         db.session.commit()
         # access new_todo.description before the session is closed
         body['description'] = new_todo.description
         body['id'] = new_todo.id
         body['completed'] = new_todo.completed
+        body['list_id'] = new_todo.todolist_id
     except:
         error = True
         db.session.rollback()
@@ -93,6 +98,14 @@ def delete_todo(todo_id):
         abort(500)
     else:
         return jsonify({ 'success': True })
+
+@app.route('/lists/<todolist_id>')
+def get_todolist(todolist_id):
+    todolists = TodoList.query.all()
+    todos = Todo.query.filter_by(todolist_id=todolist_id).order_by('id').all()
+    active_list = TodoList.query.get(todolist_id)
+    
+    return render_template('index.html', todos=todos, lists=todolists, active_list=active_list)
 
 if __name__ == '__main__':
     app.run()
