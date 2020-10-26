@@ -15,25 +15,25 @@ class Todo(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     description = db.Column(db.String(), nullable=False)
     completed = db.Column(db.Boolean, nullable=False, default=False)
-    todolist_id = db.Column(db.Integer, db.ForeignKey('todolists.id'), nullable=False)
+    list_id = db.Column(db.Integer, db.ForeignKey('lists.id'), nullable=False)
 
     def __repr__(self):
         return f'<Todo ID: {self.id}, description: {self.description}, completed: {self.completed}>'
 
-class TodoList(db.Model):
-    __tablename__ = 'todolists'
+class List(db.Model):
+    __tablename__ = 'lists'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(), nullable=False)
     todos = db.relationship('Todo', backref='list', lazy=True)
 
     def __repr__(self):
-        return f'<TodoList ID: {self.id}, name: {self.name}, todos: {self.todos}'
+        return f'<List ID: {self.id}, name: {self.name}, todos: {self.todos}'
 
 # db.create_all() --> no need since now we're using Flask-Migrate
 
 @app.route('/')
 def index():
-    return redirect(url_for('get_todolist', todolist_id=1))
+    return redirect(url_for('get_list', list_id=1))
 
 @app.route('/todos/create', methods=['POST'])
 def create_todo():
@@ -42,14 +42,14 @@ def create_todo():
     try:    
         description = request.get_json()['description']
         list_id = request.get_json()['list_id']
-        new_todo = Todo(description=description, todolist_id=list_id)
+        new_todo = Todo(description=description, list_id=list_id)
         db.session.add(new_todo)
         db.session.commit()
         # access new_todo.description before the session is closed
         body['description'] = new_todo.description
         body['id'] = new_todo.id
         body['completed'] = new_todo.completed
-        body['list_id'] = new_todo.todolist_id
+        body['list_id'] = new_todo.list_id
     except:
         error = True
         db.session.rollback()
@@ -99,13 +99,13 @@ def delete_todo(todo_id):
     else:
         return jsonify({ 'success': True })
 
-@app.route('/lists/<todolist_id>')
-def get_todolist(todolist_id):
-    todolists = TodoList.query.all()
-    todos = Todo.query.filter_by(todolist_id=todolist_id).order_by('id').all()
-    active_list = TodoList.query.get(todolist_id)
+@app.route('/lists/<list_id>')
+def get_list(list_id):
+    lists = List.query.all()
+    todos = Todo.query.filter_by(list_id=list_id).order_by('id').all()
+    active_list = List.query.get(list_id)
     
-    return render_template('index.html', todos=todos, lists=todolists, active_list=active_list)
+    return render_template('index.html', todos=todos, lists=lists, active_list=active_list)
 
 @app.route('/lists/create', methods=['POST'])
 def create_list():
@@ -113,7 +113,7 @@ def create_list():
     body = {}
     try:
         list_name = request.get_json()['name']
-        new_list = TodoList(name=list_name)
+        new_list = List(name=list_name)
         db.session.add(new_list)
         db.session.commit()
         body['name'] = new_list.name
