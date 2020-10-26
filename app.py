@@ -172,4 +172,4 @@ def delete_list(list_id):
         return jsonify({ 'success': True })
 
 if __name__ == '__main__':
-    app.run()
+    app.run(debug=True)
