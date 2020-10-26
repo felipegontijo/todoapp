@@ -34,9 +34,13 @@
 </head>
 <body>
     <div class="lists-wrapper">
+        <form id="create-list">
+            <input id="name" type="text" name="name">
+            <input type="submit" value="Create List">
+        </form>
         <ul id="lists">
             {% for list in lists %}
-                <li><a href="/lists/{{ list.id }}">
+                <li data-id="{{ list.id }}"><a href="/lists/{{ list.id }}">
                     {{ list.name }}
                 </a></li>
             {% endfor %}
@@ -44,9 +48,9 @@
     </div>
     <div class="todos-wrapper">
         <h3 class="todos-header" data-id="{{ active_list.id }}">{{ active_list.name }}</h3>
-        <form id="form">
+        <form id="create-todo">
             <input id="description" type="text" name="description"/>
-            <input type="submit" value="Create"/>
+            <input type="submit" value="Create Todo"/>
         </form>
         <div id="error" class="hidden">Something went wrong.</div>
         <ul id="todos">
@@ -60,6 +64,31 @@
         </ul>
     </div>
     <script>
+        document.getElementById('create-list').onsubmit = (e) => {
+            e.preventDefault()
+            fetch('/lists/create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    'name': document.getElementById('name').value
+                })
+            })
+            .then(response => response.json())
+            .then(jsonResponse => {
+                const lists = document.getElementById('lists')
+                const new_list = document.createElement('LI')
+                new_list.dataset.id = jsonResponse.id
+
+                const link = document.createElement('A')
+                link.href = `/lists/${jsonResponse.id}`
+                link.innerHTML = jsonResponse.name
+
+                new_list.appendChild(link)
+                lists.appendChild(new_list)
+            })
+        }
         const buttons = document.querySelectorAll('.delete-button')
         for (const button of buttons) {
             button.onclick = (e) => {
@@ -96,7 +125,7 @@
                 })
             }
         }
-        document.getElementById('form').onsubmit = (e) => {
+        document.getElementById('create-todo').onsubmit = (e) => {
             e.preventDefault()
             fetch('/todos/create', {
                 method: 'POST',

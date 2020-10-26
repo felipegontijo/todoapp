@@ -107,5 +107,27 @@ def get_todolist(todolist_id):
     
     return render_template('index.html', todos=todos, lists=todolists, active_list=active_list)
 
+@app.route('/lists/create', methods=['POST'])
+def create_list():
+    error = False
+    body = {}
+    try:
+        list_name = request.get_json()['name']
+        new_list = TodoList(name=list_name)
+        db.session.add(new_list)
+        db.session.commit()
+        body['name'] = new_list.name
+        body['id'] = new_list.id
+    except:
+        error = True
+        db.session.rollback()
+        print(sys.exc_info())
+    finally:
+        db.session.close()
+    if error:
+        abort(500)
+    else:
+        return jsonify(body)
+
 if __name__ == '__main__':
     app.run()
